@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Counter</title>
+    <script src="https://cdn.jsdelivr.net/gh/hamada147/IsThisColourSimilar@master/Colour.js" ></script>
+    <script src="https://unpkg.com/jimp@0.16.1/browser/lib/jimp.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/paper@0.12.11/dist/paper-core.min.js"
+    integrity="sha256-3PAvbPDNN6RIYkiIGX1G/0C9jaafkfxG835vH8e+/yk=" crossorigin="anonymous"></script>
+</head>
+<style>
+.color-table {
+    border: 0px solid #ffffff;
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+}
+#color-tables {
+    display: flex;
+    justify-content: start;
+}
+.color {
+    min-width: 50px;
+    min-height: 30px;
+    max-height: 30px;
+}
+.rgb {
+    font-size: 9px;
+}
+.name {
+    font-family: sans-serif;
+    font-size: 12px;
+    min-width: 70px;
+    min-height: 30px;
+}
+.container {
+    width: calc(100% - 10px);
+    overflow: auto;
+    height: calc(100% - 200px);
+    top: 300px;
+    position: absolute;
+}
+.desc {
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+#search-container {
+    /* width: 100%; */
+    display: flex;
+    flex-direction: row;
+    align-items: start;
+    min-height: 150px;
+}
+#result-table {
+    font-size: 12px;
+}
+#result-table tr td {
+    min-width: 50px;
+    min-heihgt: 30px;
+    font-family: sans-serif;
+    font-size: 12px;
+}
+/*
+#result {
+    margin-left: 5px;
+}
+*/
+canvas[resize] {
+    width: 100%;
+    height: 100%;
+}
+#canvas {
+    top: 150px;
+    left: 0px;
+    position: absolute;
+    z-index: 1000;
+}
+#data-image {
+    top:150px;
+    left: 0px;
+    position: absolute;
+    z-index: 500;
+}
+</style>
+<body>
+<script>
+window.onload = function () {
+    const canvas = document.getElementById('canvas');
+    paper.setup(canvas);
+    paper.view.autoUpdate = false;
+    // disable auto insertion of new item to the active layer
+    paper.settings.insertItems = false;
+    paper.project.clear();
+    const view = paper.project.view;
+    const controlLayer = new paper.Layer();
+    paper.project.addLayer(controlLayer);
+    const labelLayer = new paper.Layer();
+    labelLayer.name = "labels";
+    paper.project.addLayer(labelLayer);
+    controlLayer.activate();
+
+    function isReversed() {
+        return document.getElementById('reversed-color').checked;
+    }
+
+    const fileInput = document.getElementById('file_input');
+    const fileSelector = document.getElementById('select');
+
+    let start = null;
+    let end = null;
+    let line = null;
+
+    let imageData = null;
+
+    function handleFile() {
+        if (this.files.length == 1) {
+            labelLayer.removeChildren();
+            const img = document.getElementById('data-image');
+            img.src = URL.createObjectURL(this.files[0]);
+
+            Jimp.read(img.src).then(function (image) {
+                const width = image.bitmap.width;
+                const height = image.bitmap.height;
+
+                canvas.width = width / 2;
+                canvas.height = height / 2;
+
+                view.viewSize.width = width / 2;
+                view.viewSize.height = height / 2;
+
+                img.style = `width: ${width / 2}px; height: auto;`;
+
+                view.update();
+
+                line = new paper.Path([new paper.Point(20, 20), new paper.Point(80, 20)]);
+                line.strokeColor = new paper.Color(0, 0, 0);
+                paper.project.activeLayer.addChild(line);
+                start = new paper.Shape.Circle({
+                    center: [20, 20],
+                    radius: 5,
+                    //strokeWidth: 0,
+                    strokeColor: new paper.Color(0, 0, 0),
+                    fillColor: new paper.Color(1, 0, 0),
+                });
+                start.data.direction = 0;
+                paper.project.activeLayer.addChild(start);
+                end = new paper.Shape.Circle({
+                    center: [80, 20],
+                    radius: 5,
+                    //strokeWidth: 0,
+                    strokeColor: new paper.Color(0, 0, 0),
+                    fillColor: new paper.Color(1, 1, 0),
+                });
+                end.data.direction = 1;
+                paper.project.activeLayer.addChild(end);
+                view.update();
+
+                const tool = view;
+                tool.onMouseDown = onMouseDown;
+                tool.onMouseUp = onMouseUp;
+                tool.onMouseDrag = onMouseDrag;
+                //tool.onMouseMove = onMouseMove;
+
+                imageData = image;
+            });
+        }
+    }
+
+    function shrink(point, ratio) {
+        return new paper.Point(point.x * ratio, point.y * ratio)
+    }
+
+    function transFormCoord(point, ratio) {
+        return new paper.Point(point.x / ratio, point.y / ratio);
+    }
+
+    function count(ev) {
+        if (!imageData) {
+            return;
+        }
+        labelLayer.removeChildren();
+        const img = imageData;
+        const holeFunc = isReversed() ? isWhite : isBlack;
+        const threadFunc = isReversed() ? isBlack : isWhite;
+        const level = 100;
+        const holeMin = getHoleMin();
+        const threadMin = getThreadMin();
+        const startPos = transFormCoord(start.position, 0.5);
+        const endPos = transFormCoord(end.position, 0.5);
+
+        const a = (startPos.y - endPos.y) / (startPos.x - endPos.x);
+        const b = startPos.y - a * startPos.x;
+
+        const holes = [];
+
+        let search = null;
+
+        const xdiff = Math.abs(endPos.x - startPos.x);
+        const ydiff = Math.abs(endPos.y - startPos.y);
+        let isHorizontal = false;
+        if (xdiff > ydiff) {
+            isHorizontal = true;
+            const step = startPos.x > endPos.x ? -1 : 1;
+            let currentX = startPos.x;
+
+            /// Search from current position to end.
+            search = function (f, minWidth) {
+                for (let x = currentX; x < endPos.x; x += step) {
+                    const y = Math.floor(a * x + b);
+                    const c = Jimp.intToRGBA(img.getPixelColor(x, y));
+                    if (f(c.r, c.g, c.b, level)) {
+                        minWidth -= 1;
+                        if (minWidth <= 0) {
+                            currentX = x;
+                            return new paper.Point(x, y);
+                        }
+                    }
+                }
+                currentX = endPos.x;
+                return null;
+            };
+        } else {
+            const step = startPos.y > endPos.y ? -1 : 1;
+            let currentY = startPos.y;
+
+            search = function (f, minWidth) {
+                for (let y = currentY; y < endPos.y; y += step) {
+                    const x = Math.floor((y - b) / a);
+                    const c = Jimp.intToRGBA(img.getPixelColor(x, y));
+                    if (f(c.r, c.g, c.b, level)) {
+                        minWidth -= 1;
+                        if (minWidth <= 0) {
+                            currentY = y;
+                            return new paper.Point(x, y);
+                        }
+                    }
+                }
+            };
+        }
+        
+        function findHole(skip) {
+            if (skip) {
+                // skip current hole
+                if (!search(threadFunc, threadMin)) {
+                    return null;
+                }
+            }
+            return search(holeFunc, holeMin);
+        }
+        
+        // find first hole
+        const h1 = findHole(false);
+        if (!h1) {
+            return;
+        }
+        holes.push(h1);
+        // find holes
+        let h = findHole(true);
+        while (h) {
+            holes.push(h);
+            h = findHole(true);
+        }
+
+        for (let n = 0; n < holes.length - 1; n++) {
+            const hole1 = holes[n];
+            const hole2 = holes[n + 1];
+            
+            const p1 = shrink(hole1, 0.5);
+            const p2 = shrink(hole2, 0.5);
+
+            const p3 = p1.clone();
+            if (isHorizontal) {
+                p3.x += 3;
+                p3.y += 20;
+            } else {
+                p3.x += 20;
+            }
+            const rect = new paper.Shape.Rectangle({
+                point: p3,
+                size: [Math.abs(p2.x - p1.x), 20],
+                fillColor: 'black',
+            });
+            labelLayer.addChild(rect);
+            if (isHorizontal) {
+                p3.y += 13;
+            } else {
+                p3.x += 13;
+            }
+            const text = new paper.PointText({
+                point: [p1.x + Math.abs(p2.x - p1.x) / 2, p3.y],
+                content: (n + 1).toString(),
+                fillColor: 'white',
+                fontFamily: 'Arial',
+                fontSize: '12',
+                justification: 'center',
+            });
+            labelLayer.addChild(text);
+        }
+        view.update();
+
+        setResult(holes.length - 1);
+    }
+
+    function getHoleMin() {
+        return document.getElementById('hole-min').value;
+    }
+
+    function getThreadMin() {
+        return document.getElementById('thread-min').value;
+    }
+
+    function setResult(n) {
+        document.getElementById('result').textContent = n.toString();
+    }
+
+    let currentPoint = null;
+
+    function onMouseDown(ev) {
+        if (start.contains(ev.point)) {
+            currentPoint = start;
+        } else if (end.contains(ev.point)) {
+            currentPoint = end;
+        }
+    }
+
+    function onMouseUp(ev) {
+        currentPoint = null;
+    }
+
+    function onMouseDrag(ev) {
+        if (currentPoint) {
+            currentPoint.position = ev.point;
+            line.segments[currentPoint.data.direction].point = ev.point;
+            view.draw();
+        }
+    }
+
+    function onMouseMove(ev) {
+        document.getElementById('coord').textContent = `${ev.point.x}, ${ev.point.y}`;
+    }
+
+    document.getElementById('count').addEventListener('click', count, false);
+
+    fileInput.addEventListener('change', handleFile, false);
+
+    fileSelector.addEventListener('click', function(e) {
+        if (fileInput) {
+            fileInput.click();
+        }
+        e.preventDefault();
+    }, false);
+
+    function isBlack(r, g, b, level) {
+        const s = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        return s < level;
+    }
+
+    function isWhite(r, g, b, level) {
+        const s = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        return s >= level;
+    }
+};
+
+</script>
+<div id="search-container">
+    <div id="setup">
+        <input type="button" value="Select picture" id="select">
+        <input type="button" value="Count" id="count">
+        <input type="file" id="file_input" style="display:none">
+        <input type="checkbox" id="reversed-color" name="reversed-color">
+        <label for="reversed-color">Reverse black/white</label>
+        <table>
+            <tr>
+                <td>Hole min: <input type="number" id="hole-min" name="hole-min" value="5" min="1"></td>
+                <td>Thread min: <input type="number" id="thread-min" name="thread-min" value="5" min="1"></td>
+            </tr>
+        </table>
+        <!-- <div>Detection width: <input type="number" id="detect-width" name="detect-width" value="7" min="1"></div> -->
+        <div>Count: <span id="result"></span></div>
+        <!-- <div>Coordinate: <span id="coord"></span></div> -->
+    </div>
+</div>
+<!-- black level -->
+<canvas id="canvas" width="100" height="100"></canvas>
+<img id="data-image">
+</body>
+</html>

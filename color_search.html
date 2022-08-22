@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title id="title"></title>
+  <link rel="stylesheet" href="./assets/css/search.css" />
+</head>
+<script src="https://cdn.jsdelivr.net/gh/hamada147/IsThisColourSimilar@master/Colour.js" ></script>
+<script type="module" src="./assets/js/color_search.js"></script>
+<body>
+<div id="search-container">
+    <div id="search">
+        <div class="desc" id="desc"></div>
+        <div class="desc">色は実物の糸で要確認</div>
+        <div class="desc">色コードをRR, GG, BB(十進数)または<br>rrggbb(十六進数)形式で入力</div>
+        <textarea id="rgb-value"></textarea>
+        <input type="button" id="start" value="検索">
+        <div class="desc">表示<input type="radio" id="hex" name="colorType" checked><label for="hex">十六進数</label>
+                          <input type="radio" id="rbg" name="colorType"><label for="rgb">RR,GG,BB</label></div>
+        <div>所有色番号</div>
+        <textarea id="owned"></textarea>
+    </div>
+    <div id="result">
+        <table id="result-table">
+         </table>
+    </div>
+</div>
+<div class="container">
+    <div id="color-tables">
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title id="page-title">Cross-Stitch Pattern Maker</title>
+    <script src="https://cdn.jsdelivr.net/gh/hamada147/IsThisColourSimilar@master/Colour.js" ></script>
+    <script src="https://unpkg.com/jimp@0.16.1/browser/lib/jimp.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@pdf-lib/fontkit/dist/fontkit.umd.js" type="text/javascript"></script>
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <link rel="stylesheet" href="./assets/css/pattern.css" />
+</head>
+<body>
+<div id="search-container">
+    <div id="setup">
+        <table>
+            <tr>
+                <td><input type="button" value="Select picture" id="select"></td>
+            </tr>
+            <tr>
+                <td colspan="2"><b><span>Image conversion</span></b></td>
+            </tr>
+            <tr>
+                <td><span>Width</span><br><input type="number" min="1" value="40" id="width"></td>
+                <td><span>Interpolation</span><br><select id="interpolation"></select></td>
+                <td><br><input type="checkbox" value="Apply" id="apply-resize"><span>Apply</span></td>
+            </tr>
+            <tr>
+                <td><span>Posterize level</span><br>
+                <input type="number" min="2" value="8" id="posterize"></td>
+                <td></td>
+                <td><br><input type="checkbox" value="Apply" id="apply-posterize"><span>Apply</span></td>
+            </tr>
+            <tr>
+                <td><input type="button" value="Reconvert" id="convert"></td>
+            </tr>
+            <tr>
+                <td><b><span>Color setting</span></b></td>
+            </tr>
+            <tr>
+                <td><span>Color table</span><br><select id="color-group"></select></td>
+                <td><span>Number of colors</span><br><input type="number" min="1" value="40" id="colors"></td>
+            </tr>
+            <tr>
+                <td><input type="button" value="Convert color" id="convert-color"></td>
+            </tr>
+            <tr>
+                <td><span>Replace color</span><br>
+                <span>(color to color number,</span><br><span>separated by space)</span><br>
+                <textarea id="color-number" rows="5" cols="20"></textarea></td>
+                <td><span>Omit numbering colors</span><br>
+                <span>(hexadecimal RGB color code)</span><br>
+                <textarea id="omit" rows="5" cols="20"></textarea></td>
+            </tr>
+            <tr>
+                <td><b><span>Fabric</span></b></td>
+            </tr>
+            <tr>
+                <td><span>Count/per 10 cm</span><br><select id="counts"></select></td>
+            </tr>
+            <tr><td><b><span>Thread</span></b></td></tr>
+            <tr>
+                <td><span>Ply</span><br><select id="ply"></select></td>
+                <td><span>Addition</span><br><select id="addition"></select></td>
+            </tr>
+            <tr><td><b><span>Document setting</span></b></td></tr>
+            <tr>
+                <td><span>Title</span><br><input type="text" id="title"></td>
+                <td><span>Author</span><br><input type="text" id="author"></td>
+            </tr>
+            <tr>
+                <td colspan="2"><span>Copyright</span><br>
+                    <textarea id="copyright" rows="5" cols="60"></textarea></td>
+            </tr>
+            <tr>
+                <td><span>PDF paper size</span><br><select id="paper-size"></select>
+                <input type="radio" id="portrait" name="paper-direction" checked>
+                <label for="portrait"><span>Portrait</span></label>
+                <input type="radio" id="landscape" name="paper-direction">
+                <label for="landscape"><span>Landscape</span></label></td>
+                <td>
+                </td>
+            </tr>
+            <tr>
+                <td><span>Color mode</span><br><select id="color-mode"></select></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td colspan="2"><input type="button" value="Create pattern" id="create">
+                <input type="checkbox" value="PDF" id="pdf-check" name="pdf-check" >
+                    <label for="pdf-check"><span>PDF</span></label>
+                    <input type="checkbox" value="SVG" id="svg-check" name="svg-check">
+                    <label for="svg-check"><span>SVG</span></label>
+                    <input type="checkbox" value="SVG in HTML" id="svg-html-check" name="svg-html-check" checked>
+                    <label for="svg-html-check"><span>SVG in HTML</span></label>
+                </td>
+            </tr>
+        </table>
+        <input type="file" id="file_input" style="display:none;">
+        <div id="notice">Powered by <a href="https://github.com/oliver-moran/jimp">Jimp</a>,
+     <a href="https://pdf-lib.js.org/">PDF-Lib</a> and
+     <a href="https://github.com/hamada147/IsThisColourSimilar">IsThisColourSimilar</a>.</div>
+    </div>
+    <div id="result">
+        <p id="image-info"></p>
+        <div id="image"><span>Original image</span> <span id="data-image-size"></span><br><img id="data_image"></div>
+        <div id="image_converted"><span>Converted</span> <span id="data-image-converted-size"></span><br><img id="data_image_converted"></div>
+        <div id="image_replaced"><span>Color replaced</span> <br><img id="data_image_replaced"></div>
+    </div>
+    <div id="color-table-container">
+        <div>
+            <p><span>Color selection</span></p>
+            <table id="color-table"></table>
+        </div>
+    </div>
+</div>
+<div id="info"></div>
+<object type="application/pdf" data="" id="pdf" width="1000" height="900"></object>
+<div id="svg"><img id="svg_image"></div>
+<div id="svg-html">
+    <iframe id="svg_html_image" width="400" height="300" style="visibility: hidden;"></iframe>
+    <br><a href="" id="svg-html-link"></a>
+</div>
+<div id="text-width" style="visibility: visible; display: block; font-family: helvetica; font-size: 8pt;"></div>
+<script type="module" src="./assets/js/pattern2.js"></script>
+</body>
+</html>

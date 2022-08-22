@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>サイズ計算</title>
+</head>
+<style>
+body {
+    margin-left: 1em;
+}
+input {
+    width: 100px;
+}
+.numeric {
+    text-align: right;
+    min-width: 50px;
+}
+.table-title {
+    border-top: 2px solid #000000;
+    border-bottom: 1px solid #000000;
+}
+.table-title td {
+    text-align: center;
+}
+.bottom-row {
+    border-bottom: 1px solid #000000;
+}
+table {
+    border-collapse: collapse;
+}
+td {
+    padding-left: 8px;
+    padding-right: 8px;
+}
+</style>
+<body>
+<table>
+<tr>
+<td>
+<div class="search-container">
+    <p>目数からサイズ</p>
+    <div id="count-setup">
+        <table>
+            <tr>
+                <td><span>幅 [目]</span><br><input id="count-width" type="number" min="1" value="50"></select></td>
+                <td><span>高さ [目]</span><br><input id="count-height" type="number" min="1" value="50"></select></td>
+            </tr>
+        </table>
+    </div>
+</div>
+<p></p>
+<div id="count-data">
+    <table id="count-output">
+        <tr class="table-title">
+            <td>カウント</td><td>目/10 cm</td><td>幅 [mm]</td><td>高さ [mm]</td>
+        </tr>
+    </table>
+</div>
+</td>
+<td>
+<div class="search-container">
+    <p>サイズから目数</p>
+    <div id="size-setup">
+        <table>
+            <tr>
+                <td><span>幅 [mm]</span><br><input id="size-width" type="number" min="1" value="50"></select></td>
+                <td><span>高さ [mm]</span><br><input id="size-height" type="number" min="1" value="50"></select></td>
+            </tr>
+        </table>
+    </div>
+</div>
+<p></p>
+<div id="size-data">
+    <table id="size-output">
+        <tr class="table-title">
+            <td>カウント</td><td>目/10 cm</td><td>幅 [目]</td><td>高さ [目]</td>
+        </tr>
+    </table>
+</div>
+</td>
+</tr>
+</table>
+<script type="module" src="./assets/js/size.js"></script>
+</body>
+</html>

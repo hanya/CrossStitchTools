@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Color Replacer</title>
+    <script src="https://unpkg.com/jimp@0.16.1/browser/lib/jimp.js"></script>
+</head>
+<style>
+#search-container {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    min-height: 150px;
+}
+.tt {
+    font-family: monospace;
+}
+.desc {
+    font-size: 10px;
+}
+</style>
+<body>
+<script>
+window.onload = function () {
+    function toRGB(s) {
+        const values = s.split(',');
+        if (values.length == 3) {
+            return [0,
+                    parseInt(values[0].trim()),
+                    parseInt(values[1].trim()),
+                    parseInt(values[2].trim())];
+        } else if (values.length == 1) {
+            const color = parseInt(values[0], 16);
+            const r = (color & 0xff0000) >> 16;
+            const g = (color & 0xff00) >> 8;
+            const b = color & 0xff;
+            return [0, r, g, b];
+        } else {
+            return null;
+        }
+    }
+
+    function readRGB() {
+        const value = document.getElementById('rgb-value').value.trim();
+        return toRGB(value);
+    }
+
+    function getSeparator() {
+        if (document.getElementById('sep_space').checked) {
+            return ' ';
+        } else if (document.getElementById('sep_comma').checked) {
+            return ',';
+        } else if (document.getElementById('sep_tab').checked) {
+            return '\t';
+        } else {
+            return ' ';
+        }
+    }
+
+    function parseReplaceColor() {
+        const s = document.getElementById('replace').value;
+        const lines = s.split('\n');
+        const replaceMap = new Map();
+        for (const line of lines) {
+            if (line.length > 3) {
+                const p = line.split(getSeparator());
+                const rgb = toRGB(p[1]);
+                const i = Jimp.rgbaToInt(rgb[1], rgb[2], rgb[3], 255);
+
+                replaceMap.set(p[0], i);
+            }
+        }
+        return replaceMap;
+    }
+
+    function parseImage() {
+        const replaceMap = parseReplaceColor();
+        if (replaceMap.size <= 0) {
+            return;
+        }
+        URL.revokeObjectURL(document.getElementById('result_image'));
+
+        const img = document.getElementById('data_image');
+        Jimp.read(img.src).then(function (image) {
+            const width = image.bitmap.width;
+            const height = image.bitmap.height;
+
+            // Count colors
+            const colorCounter = new Map();
+
+            for (const { x, y, idx, _ } of image.scanIterator(0, 0, width, height)) {
+                const rgba = [
+                    image.bitmap.data[idx + 0],
+                    image.bitmap.data[idx + 1],
+                    image.bitmap.data[idx + 2],
+                    image.bitmap.data[idx + 3]
+                ];
+
+                const hex = rgbToHex(rgba[0], rgba[1], rgba[2]);
+                const rep = replaceMap.get(hex);
+                if (!(rep === undefined)) {
+                    image.setPixelColor(rep, x, y);
+                }
+            }
+
+            image.getBase64Async(Jimp.MIME_PNG).then(newImage => {
+                const img = document.getElementById('result_image');
+                img.src = newImage;
+            });
+        });
+    }
+
+    const fileInput = document.getElementById('file_input');
+    const fileSelector = document.getElementById('select');
+
+    function handleFile() {
+        if (this.files.length == 1) {
+            const img = document.getElementById('data_image');
+            img.src = URL.createObjectURL(this.files[0]);
+
+            parseImage();
+        }
+    }
+
+    document.getElementById('convert').addEventListener('click', parseImage, false);
+    fileInput.addEventListener('change', handleFile, false);
+
+    fileSelector.addEventListener('click', function(e) {
+        if (fileInput) {
+            fileInput.click();
+        }
+        e.preventDefault();
+    }, false);
+
+    function rgbToHex(r, g, b) {
+        let rh = r.toString(16);
+        let gh = g.toString(16);
+        let bh = b.toString(16);
+        return (rh.length == 2 ? rh : "0" + rh) +
+               (gh.length == 2 ? gh : "0" + gh) +
+               (bh.length == 2 ? bh : "0" + bh);
+    }
+}
+</script>
+<div id="search-container">
+    <div id="setup">
+        <div>Replaces colors in an image.</div>
+        <input type="button" value="Select picture" id="select">
+        <input type="button" value="Convert" id="convert">
+        <input type="file" id="file_input" style="display:none">
+        <div>Replace colors</div>
+        <table>
+            <tr>
+                <td>
+                <textarea id="replace" rows="15" cols="15"></textarea>
+                </td>
+                <td style="vertical-align: top;">
+                    Separator<br>
+                    <input type="radio" id="sep_space" name="sep" value="space" checked><label for="space">Space</label>
+                    <input type="radio" id="sep_comma" name="sep" value="comma"><label for="comma">Comma</label>
+                    <input type="radio" id="sep_tab" name="sep" value="tab"><label for="tab">Tab</label><br>
+                    ex.<br>
+                    <span class="tt">ffffff ff00ff<br>101010 000000</span><br>
+                    Gives two colors replaced<br>
+                    from left to right,<br>
+                    separated by the spacer.<br>
+                    <br>
+                    <span class="desc"><a href="https://github.com/oliver-moran/jimp">Jimp</a> is used to read image data.</span>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <div id="result">
+        <table>
+            <tr><td>Original</td><td>Converted</td></tr>
+            <tr><td><img id="data_image"></td><td><img id="result_image"></td></tr>
+        </table>
+    </div>
+</div>
+</body>
+</html>

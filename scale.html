@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Scale Maker</title>
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+</head>
+</style>
+<body>
+<div id="info">
+    <div id="setup">
+        <table>
+            <tr>
+                <td><span>布 カウント/10 cm 当たり</span><br><select id="counts"></select></td>
+                <td><span>幅補正%</span><br><input type="numeric" id="correction" value="0"></td>
+            </tr>
+            <tr>
+                <td><span>PDF paper size</span><br><select id="paper-size"></select></td>
+                <td></td>
+            </tr>
+        </table>
+    </div>
+    <div id="notice">Powered by <a href="https://pdf-lib.js.org/">PDF-Lib</a>.</div>
+</div>
+<object type="application/pdf" data="" id="pdf" width="1000" height="900"></object>
+<script type="module" src="./assets/js/scale.js"></script>
+</body>
+</html>

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Counter</title>
+    <script src="https://cdn.jsdelivr.net/gh/hamada147/IsThisColourSimilar@master/Colour.js" ></script>
+    <script src="https://unpkg.com/jimp@0.16.1/browser/lib/jimp.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/paper@0.12.11/dist/paper-core.min.js"
+    integrity="sha256-3PAvbPDNN6RIYkiIGX1G/0C9jaafkfxG835vH8e+/yk=" crossorigin="anonymous"></script>
+</head>
+<style>
+.color-table {
+    border: 0px solid #ffffff;
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+}
+#color-tables {
+    display: flex;
+    justify-content: start;
+}
+.color {
+    min-width: 50px;
+    min-height: 30px;
+    max-height: 30px;
+}
+.rgb {
+    font-size: 9px;
+}
+.name {
+    font-family: sans-serif;
+    font-size: 12px;
+    min-width: 70px;
+    min-height: 30px;
+}
+.container {
+    width: calc(100% - 10px);
+    overflow: auto;
+    height: calc(100% - 200px);
+    top: 300px;
+    position: absolute;
+}
+.desc {
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+#search-container {
+    /* width: 100%; */
+    display: flex;
+    flex-direction: row;
+    align-items: start;
+    min-height: 150px;
+}
+#result-table {
+    font-size: 12px;
+}
+#result-table tr td {
+    min-width: 50px;
+    min-heihgt: 30px;
+    font-family: sans-serif;
+    font-size: 12px;
+}
+/*
+#result {
+    margin-left: 5px;
+}
+*/
+canvas[resize] {
+    width: 100%;
+    height: 100%;
+}
+</style>
+<body>
+<script>
+window.onload = function () {
+    
+
+    const canvas = document.getElementById('canvas');
+    paper.setup(canvas);
+    paper.view.autoUpdate = false;
+    // disable auto insertion of new item to the active layer
+    paper.settings.insertItems = true;
+    paper.project.clear();
+    const view = paper.project.view;
+    /*
+    function parseImage() {
+        const img = document.getElementById('data_image');
+        Jimp.read(img.src).then(function (image) {
+            //console.log(image);
+            image.grayscale().getBase64(Jimp.MIME_PNG, function (e, newImage) {
+                const i = document.getElementById('data_image_grayscale');
+                i.src = newImage;
+            });
+            //.getBuffer(Jimp.MIME_PNG);
+            //;color([{ apply: 'grayscale' }]);
+        });
+    }
+    */
+    
+    function isReversed() {
+        return document.getElementById('reversed-color').checked;
+    }
+    
+    const fileInput = document.getElementById('file_input');
+    const fileSelector = document.getElementById('select');
+
+    let start = null;
+    let end = null;
+    let line = null;
+    
+    let image = null;
+
+    function handleFile() {
+        //console.log(this.files);
+        //const fileInput = document.getElementById('file_input');
+        if (this.files.length == 1) {
+            const img = document.getElementById('data_image');
+            //img.file = this.files[0]
+            //img.src = 
+            let src = URL.createObjectURL(this.files[0]);
+
+            let r = new paper.Raster(src);
+            r.onLoad = function() {
+                if (r.loaded) {
+                    /*
+                    canvas.width = r.width;
+                    canvas.height = r.height;
+                    */
+                    //view.update();
+                    
+                    //paper.project.view.update();
+                    //r.position = paper.project.view.center;
+                    //paper.project.view.update();
+                    
+                    //r.pivot = new paper.Point(r.width / 2, r.height / 2);
+                    //r.position = new paper.Point(0, 0);
+                    //r.pivot = new paper.Point(0, 0);
+                    //r.position = new paper.Point(0, 0);
+                    
+                    //r.scale(1.0);
+                    
+                    canvas.width = r.width;// / 2;
+                    canvas.height = r.height;// / 2;
+                    
+                    view.viewSize.width = r.width;// / 2;
+                    view.viewSize.height = r.height;// / 2;
+                    
+                    r.position = new paper.Point(r.width / 2, r.height / 2);
+                    
+                    view.update();
+                    
+                    
+                    console.log(r.size);
+                    console.log(r.pivot);
+                    console.log(r.position);
+                    //console.log(new paper.Point(canvas.width, canvas.height));
+                    
+                    //r.position = new paper.Point(r.width / 2, r.height / 2);
+                    //r.position = new paper.Point(0, 0);
+                    
+                    view.update();
+                    
+                    // todo, reversed line color, white
+                    
+                    line = new paper.Path([new paper.Point(20, 20), new paper.Point(80, 20)]);
+                    line.strokeColor = new paper.Color(0, 0, 0);
+                    start = new paper.Shape.Circle({
+                        center: [20, 20],
+                        radius: 5,
+                        //strokeWidth: 0,
+                        strokeColor: new paper.Color(0, 0, 0),
+                        fillColor: new paper.Color(1, 0, 0),
+                    });
+                    start.data.direction = 0;
+                    end = new paper.Shape.Circle({
+                        center: [80, 20],
+                        radius: 5,
+                        //strokeWidth: 0,
+                        strokeColor: new paper.Color(0, 0, 0),
+                        fillColor: new paper.Color(1, 1, 0),
+                    });
+                    end.data.direction = 1;
+                    //line.stroke
+                    view.update();
+                    
+                    //const tool = new paper.Tool();
+                    const tool = view;
+                    tool.onMouseDown = onMouseDown;
+                    tool.onMouseUp = onMouseUp;
+                    tool.onMouseDrag = onMouseDrag;
+                    tool.onMouseMove = onMouseMove;
+                    
+                    image = r;
+                }
+            }
+        }
+    }
+    
+    function count(ev) {
+        if (!image) {
+            return;
+        }
+        const img = image;
+        //const biFunc = isReversed() ? isWhite : isBlack;
+        const holeFunc = isReversed() ? isWhite : isBlack;
+        const stringFunc = isReversed() ? isBlack : isWhite;
+        const level = 100;//128;
+        const startPos = start.position;
+        const endPos = end.position;
+        //console.log(startPos);
+        //console.log(endPos);
+        
+        const a = (startPos.y - endPos.y) / (startPos.x - endPos.x);
+        const b = startPos.y - a * startPos.x;
+        //console.log(a);
+        //console.log(b);
+        
+        const xdiff = Math.abs(endPos.x - startPos.x);
+        const ydiff = Math.abs(endPos.y - startPos.y);
+        if (xdiff > ydiff) {
+            const step = startPos.x > endPos.x ? -1 : 1;
+            
+            let currentX = startPos.x;
+
+            /// Search from current position to end.
+            function search(f) {
+                for (let x = currentX; x < endPos.x; x += step) {
+                    const y = Math.floor(a * x + b);
+                    const c = img.getPixel(x, y);
+                    const r = c.red;
+                    const g = c.green;
+                    const bu = c.blue;
+                    if (f(c.red, c.green, c.blue, level)) {
+                        currentX = x;
+                        return [x, y];
+                    }
+                }
+                currentX = endPos.x;
+                return null;
+            }
+
+            function findHole(skip) {
+                if (skip) {
+                    // skip current hole
+                    const ret = search(stringFunc);
+                    if (!ret) {
+                        return null;
+                    }
+                }
+                return search(holeFunc);
+            }
+            
+            const holes = [];
+
+            // find first hole
+            const h1 = findHole(false);
+            if (!h1) {
+                return;
+            }
+            holes.push(h1);
+            let h = findHole(true);
+            while (h) {
+                holes.push(h);
+                h = findHole(true);
+            }
+            
+            for (const hole of holes) {
+                const l = new paper.Path([new paper.Point(hole[0], hole[1]), new paper.Point(hole[0], hole[1] + 50)]);
+                l.strokeColor = new paper.Color(0., 0., 1.);
+            }
+            view.update();
+            
+            console.log(holes);
+        } else {
+            const step = startPos.y > endPos.y ? -1 : 1;
+            for (let y = startPos.y; y < endPos.y; y += step) {
+                const x = Math.floor((y - b) / a);
+                const c = img.getPixel(x, y);
+                if (biFunc(c.red, c.green, c.blue, level)) {
+                    
+                }
+            }
+        }
+        
+    }
+    
+    let currentPoint = null;
+    
+    function onMouseDown(ev) {
+        //console.log(ev.point);
+        if (start.contains(ev.point)) {
+            currentPoint = start;
+        } else if (end.contains(ev.point)) {
+            currentPoint = end;
+        }
+        //console.log(currentPoint);
+        /*
+        if (!currentPoint) {
+            console.log(ev.point);
+            console.log(start.position);
+            console.log(end.position);
+        }*/
+    }
+    
+    function onMouseUp(ev) {
+        currentPoint = null;
+    }
+    
+    function onMouseDrag(ev) {
+        if (currentPoint) {
+            currentPoint.position = ev.point;
+            line.segments[currentPoint.data.direction].point = ev.point;
+            //console.log(line.segments);
+            view.draw();
+            //console.log(start.position);
+            //console.log(end.position);
+        }
+    }
+
+    function onMouseMove(ev) {
+        document.getElementById('coord').textContent = `${ev.point.x}, ${ev.point.y}`;
+    }
+    
+    document.getElementById('count').addEventListener('click', count, false);
+
+    fileInput.addEventListener('change', handleFile, false);
+
+    fileSelector.addEventListener('click', function(e) {
+        if (fileInput) {
+            fileInput.click();
+        }
+        e.preventDefault();
+    }, false);
+
+    function isBlack(r, g, b, level) {
+        //const g = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        const s = 54.213 * r + 182.376 * g + 18.411 * b;
+        return s < level;
+    }
+    
+    function isWhite(r, g, b, level) {
+        //const g = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        const s = 54.213 * r + 182.376 * g + 18.411 * b;
+        return s >= level;
+    }
+};
+
+</script>
+<div id="search-container">
+    <div id="setup">
+        <!--
+        <div>Count/par 10 cm</div>
+        <select id="counts"></select>
+        -->
+        <!--
+        <input type="checkbox" name="show_grid">
+        <label for="show_grid">Show grid</label>
+        -->
+        <input type="button" value="Select picture" id="select">
+        <input type="button" value="Count" id="count">
+        <input type="file" id="file_input" style="display:none">
+        <!-- TODO color selection -->
+        <input type="checkbox" id="reversed-color" name="reversed-color">
+        <label for="reversed-color">Reverse black/white</label>
+        <div id="coord"></div>
+    </div>
+    <div id="result">
+        <div id="image"><img id="data_image"></div>
+    </div>
+</div>
+<!-- black level -->
+<div id="info"></div>
+<object type="application/pdf" data="" id="pdf" width="1000" height="900"></object>
+<div id="pt"></div>
+
+<canvas id="canvas" width="100" height="100"></canvas>
+</body>
+</html>

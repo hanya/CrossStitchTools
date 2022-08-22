@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>フレームサイズ</title>
+</head>
+<style>
+body {
+    margin-left: 1em;
+}
+#search-container {
+    display: flex;
+    flex-direction: row;
+    align-items: start;
+    min-height: 70px;
+}
+select {
+    min-width: 120px;
+}
+.numeric {
+    text-align: right;
+    min-width: 50px;
+}
+.table-title {
+    border-top: 2px solid #000000;
+    border-bottom: 1px solid #000000;
+}
+.table-title td {
+    text-align: center;
+}
+.bottom-row {
+    border-bottom: 1px solid #000000;
+}
+table {
+    border-collapse: collapse;
+}
+td {
+    padding-left: 8px;
+    padding-right: 8px;
+}
+</style>
+<body>
+<div id="search-container">
+    <div id="setup">
+        <table>
+            <tr>
+                <td><span>布 カウント/10 cm 当たり</span><br><select id="counts"></select></td>
+            </tr>
+        </table>
+    </div>
+</div>
+<div id="data">
+    <table id="frames">
+        <tr class="table-title"><td>名称</td><td>幅</td><td>高さ</td>
+        <td>内幅</td><td>内高さ</td><td>内幅目数</td><td>内高さ目数</td>
+        <td>幅/高さ</td><td>高さ/幅</td><td>購入</td></tr>
+    </table>
+</div>
+<div>
+<p>購入 1: ダイソー, 2: セリア, 3: キャンドゥ</p>
+</div>
+<script type="module" src="./assets/js/frame.js"></script>
+</body>
+</html>

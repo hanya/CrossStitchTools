@@ -140,10 +140,10 @@ export class PDFWriter {
                 continue;
             }
             const span = s.substring(start, start + len);
-            spanList.push({start: start, len: len, font: isWinAnsi ? this.helveticaFont : this.MpFont});
+            spanList.push({start: start, len: len, font: !isWinAnsi ? this.helveticaFont : this.MpFont});
             winAnsi = isWinAnsi;
             start = start + len;
-            len += 1;
+            len = 0;
         }
 
         spanList.push({start: start, len: len, font: winAnsi ? this.helveticaFont : this.MpFont});

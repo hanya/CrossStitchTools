@@ -461,11 +461,13 @@ export class SVGWriter {
             };
         }
         this.options = options;
-        this.imageHeight += this.calculateColorTableHeight(options.colorCount);
+        const tableSize = this.calculateColorTableSize(options.colorCount);
+        this.imageHeight += tableSize[1];
 
         this.dom = this._createDom(
             this.outerLineWidth, this.outerLineWidth,
-            this.imageWidth, this.imageHeight, useLink);
+            this.imageWidth > tableSize[0] ? this.imageWidth : tableSize[0],
+            this.imageHeight, useLink);
 
         this.cells = this.addGraphic('cells', this.dom);
         this.cellDefIndices = new Map();
@@ -779,12 +781,12 @@ export class SVGWriter {
         return obj;
     }
 
-    calculateColorTableHeight(colorCount) {
+    calculateColorTableSize(colorCount) {
         const cellWidth = 65.;
         const lineHeight = 16.;
         const cellsInRow = Math.max(Math.floor(this.imageWidth / cellWidth), 3);
         const rows = Math.ceil(colorCount / cellsInRow);
-        return lineHeight * 5 * rows + (rows - 1) * 5 + 10;
+        return [cellsInRow * cellWidth + cellWidth * 1.5, lineHeight * 5 * rows + (rows - 1) * 5 + 10];
     }
 
     addColorTable() {
@@ -800,7 +802,8 @@ export class SVGWriter {
 
         const g = this.addGraphic('color-table', this.dom);
         let x = this.offset;
-        let y = this.bottomY - this.calculateColorTableHeight(colors.length) + 10;
+        const tableSize = this.calculateColorTableSize(colors.length);
+        let y = this.bottomY - tableSize[1] + 10;
         const addHeader = () => {
             this.addText(g, x, y, this.labels.number, 'start', size);
             y += lineHeight;

@@ -126,33 +126,18 @@ window.onload = function () {
 
     function setAllNumberingVisibility(visibility) {
         const state = visibility ? 'visible' : 'hidden';
-        const defs = document.getElementById('cell-defs');
-        for (const node of defs.childNodes) {
+        const labels = document.getElementById('labels');
+        for (const node of labels.childNodes) {
             if (node.tagName == 'g') {
-                for (const child of node.childNodes) {
-                    if (child.tagName == 'text') {
-                        child.setAttribute('visibility', state);
-                        break;
-                    }
-                }
-            }
-        }
+                node.setAttribute('visibility', state);
+              }
+          }
     }
 
     function setNumberingVisibility(id, visibility) {
         const state = visibility ? 'visible' : 'hidden';
-        const defs = document.getElementById('cell-defs');
-        for (const node of defs.childNodes) {
-            if (node.tagName == 'g' && node.id == id) {
-                for (const child of node.childNodes) {
-                    if (child.tagName == 'text') {
-                        child.setAttribute('visibility', state);
-                        break;
-                    }
-                }
-                return;
-            }
-        }
+        const labels = document.getElementById(id + '-labels');
+        labels.setAttribute('visibility', state);
     }
 
     function runCommand(cmd) {
@@ -470,6 +455,8 @@ export class SVGWriter {
             this.imageHeight, useLink);
 
         this.cells = this.addGraphic('cells', this.dom);
+        this.cellLabels = this.addGraphic('labels', this.dom);
+        this.labelsNodes = new Map();
         this.cellDefIndices = new Map();
         this.cellDefInfo = new Map();
         this.addGrid();
@@ -573,6 +560,16 @@ export class SVGWriter {
         const realY = this.gridOriginY + y * this.gridSize;
         this.addUse(this.cells, target, realX, realY);
 
+        const labelsTarget = target + '-labels';
+        let parent = this.labelsNodes.get(labelsTarget);
+        if (parent == null) {
+            parent = this.createElement('g');
+            parent.setAttribute('id', labelsTarget);
+            this.cellLabels.append(parent);
+            this.labelsNodes.set(labelsTarget, parent);
+        }
+        this.addUse(parent, target + '-label', realX, realY);
+
         const index = this.cellDefIndices.get(target);
         if (index) {
             this.cellData[y][x] = index;
@@ -580,27 +577,21 @@ export class SVGWriter {
     }
 
     addCellDef(color, id, name, is_black, count) {
-        const g = this.createElement('g');
-        g.setAttribute('id', id);
-        this.cellDefs.appendChild(g);
-
         const width = this.gridSize - (this.forPrinting ? this.gridLineWidth : 0);
         const height = this.gridSize - (this.forPrinting ? this.gridLineWidth : 0);
         const rect = this.createElement('rect');
-        //rect.id = 'background';
         rect.setAttribute('x', 0);
         rect.setAttribute('y', 0);
         rect.setAttribute('width', width);
         rect.setAttribute('height', height);
         rect.setAttribute('style', `fill: #${color}; stroke: none;`);
-        //rect.setAttribute('id', id);
-        //this.cellDefs.appendChild(rect);
-        g.appendChild(rect);
+        rect.setAttribute('id', id);
+        this.cellDefs.appendChild(rect);
 
         const text = this.createElement('text');
         text.textContent = id;
-        text.setAttribute('x', 0);//width / 2);
-        text.setAttribute('y', 0);//height - 2);
+        text.setAttribute('x', 0);
+        text.setAttribute('y', 0);
         text.setAttribute('dx', width / 2);
         text.setAttribute('dy', height - 2);
         text.setAttribute('text-anchor', 'middle');
@@ -608,9 +599,8 @@ export class SVGWriter {
         text.setAttribute('font-size', '9px');
         text.setAttribute('cursor', 'default');
         text.setAttribute('fill', is_black ? 'white' : 'black');
-        //text.setAttribute('visibility', 'hidden');
-
-        g.appendChild(text);
+        text.setAttribute('id', id + '-label');
+        this.labelDefs.appendChild(text);
 
         this.cellDefIndices.set(id, this.cellDefIndices.size);
         this.cellDefInfo.set(id, [color, name, count, is_black]);
@@ -622,6 +612,12 @@ export class SVGWriter {
         defs.setAttribute('id', 'cell-defs');
         this.dom.appendChild(defs);
         this.cellDefs = defs;
+
+        const labelDefs = this.createElement('defs');
+        labelDefs.setAttribute('id', 'label-defs');
+        this.dom.appendChild(labelDefs);
+        this.labelDefs = labelDefs;
+
         for (const color of colors) {
             this.addCellDef(color.color, color.id, color.name, color.is_black, color.count);
         }
